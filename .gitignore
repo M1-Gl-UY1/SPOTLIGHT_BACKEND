@@ -1,0 +1,43 @@
+### Java
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Dossiers de build
+/target/
+/build/
+/out/
+
+### Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### Gradle
+.gradle/
+/build/
+
+### IntelliJ IDEA
+.idea/
+/*.iml
+/modules.xml
+/workspace.xml
+/out/
+
+# Cache IntelliJ
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/shelf/
+
+### VS Code
+.vscode/
+
+### Systèmes
+.DS_Store
+Thumbs.db
+
+### Logs & temp
+*.log
+*.tmp
