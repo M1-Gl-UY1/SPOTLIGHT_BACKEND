@@ -18,7 +18,7 @@ class EurekaConfigManager:
         self.instance_host = "localhost"  # ou ton IP
         
         # URLs de tes services Spring
-        self.eureka_server = "http://localhost:8761/eureka"
+        self.eureka_server = "http://localhost:8761/"
         self.config_server = "http://localhost:8888"
         
         # Configuration récupérée du Config Server

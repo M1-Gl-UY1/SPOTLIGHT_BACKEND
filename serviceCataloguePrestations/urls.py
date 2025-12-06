@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CategorieViewSet, TagViewSet, PrestationViewSet, AvisViewSet
+from .views import CategorieViewSet, TagViewSet, PrestationViewSet, AvisViewSet, UserViewSet
 
 # Création du router
 router = DefaultRouter()
@@ -10,6 +10,8 @@ router.register(r'categories', CategorieViewSet, basename='categorie')
 router.register(r'tags', TagViewSet, basename='tag')
 router.register(r'prestations', PrestationViewSet, basename='prestation')
 router.register(r'avis', AvisViewSet, basename='avis')
+router.register(r'users', UserViewSet, basename='user')
+
 
 # URLs de l'application
 urlpatterns = [

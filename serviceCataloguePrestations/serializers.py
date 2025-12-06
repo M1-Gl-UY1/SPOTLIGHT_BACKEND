@@ -1,5 +1,9 @@
+from dataclasses import fields
 from rest_framework import serializers
+import rest_framework
 from .models import Categorie, Tag, Prestation, Image, Avis
+from django.contrib.auth.models import User
+
 
 
 class CategorieSerializer(serializers.ModelSerializer):
@@ -103,3 +107,8 @@ class PrestationCreateSerializer(serializers.ModelSerializer):
             'titre', 'description', 'prix', 'categorie', 
             'tags', 'est_actif'
         ]
+        
+class userSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields= ['id', 'username']

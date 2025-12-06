@@ -1,17 +1,20 @@
+from typing import Generic
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count
 from .models import Categorie, Tag, Prestation, Avis
 from .serializers import (
     CategorieSerializer, TagSerializer,
     PrestationListSerializer, PrestationDetailSerializer, 
-    PrestationCreateSerializer, AvisSerializer, AvisCreateSerializer
+    PrestationCreateSerializer, AvisSerializer, AvisCreateSerializer, userSerializer
 )
-
+from django.contrib.auth.models import User
 from spotlight.eureka_config import eureka_manager
+
+
 
 class CategorieViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -59,7 +62,8 @@ class PrestationViewSet(viewsets.ModelViewSet):
     - ?ordering=prix / -prix / popularite / -popularite / note_moyenne
     """
     queryset = Prestation.objects.filter(est_actif=True).select_related('categorie').prefetch_related('tags', 'images')
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titre', 'description']
     ordering_fields = ['prix', 'popularite', 'note_moyenne', 'date_creation']
@@ -155,7 +159,9 @@ class AvisViewSet(viewsets.ModelViewSet):
     DELETE /avis/{id}/ - Supprimer son avis
     """
     queryset = Avis.objects.all().select_related('prestation', 'utilisateur')
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
+    
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -191,8 +197,13 @@ class AvisViewSet(viewsets.ModelViewSet):
         if instance.utilisateur != self.request.user:
             raise PermissionError("Vous ne pouvez supprimer que vos propres avis")
         instance.delete()
-        
-        
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = userSerializer
+    permission_classes = [AllowAny]
+    
         
         
         
