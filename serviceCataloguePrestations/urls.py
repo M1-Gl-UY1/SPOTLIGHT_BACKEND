@@ -1,6 +1,15 @@
 from django.urls import path, include
+
 from rest_framework.routers import DefaultRouter
 from .views import CategorieViewSet, TagViewSet, PrestationViewSet, AvisViewSet, UserViewSet
+# Import des views IA
+from .ai_views import (
+    RecommandationAIView,
+    analyse_besoin_simple,
+    sauvegarder_offre,
+    exemples_besoins
+)
+
 
 # Création du router
 router = DefaultRouter()
@@ -16,6 +25,10 @@ router.register(r'users', UserViewSet, basename='user')
 # URLs de l'application
 urlpatterns = [
     path('', include(router.urls)),
+    path('ai/recommandations/', RecommandationAIView.as_view(), name='ai-recommandations'),
+    path('ai/analyser/', analyse_besoin_simple, name='ai-analyser'),
+    path('ai/sauvegarder-offre/', sauvegarder_offre, name='ai-sauvegarder'),
+    path('ai/exemples/', exemples_besoins, name='ai-exemples'),
 ]
 
 

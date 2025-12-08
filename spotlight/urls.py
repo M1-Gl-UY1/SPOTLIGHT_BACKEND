@@ -20,6 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('servicecat/', include("serviceCataloguePrestations.urls")),
+    path('servicecat/', include("serviceCataloguePrestations.urls")),
+    
     
     
     # Endpoints pour Eureka
