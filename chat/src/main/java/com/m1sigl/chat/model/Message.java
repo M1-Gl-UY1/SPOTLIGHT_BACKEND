@@ -30,5 +30,7 @@ public class Message {
     private Date timestamp;
 
     private MessageStatus status;
+
     private String mediaUrl;
+    private FileType type;
 }

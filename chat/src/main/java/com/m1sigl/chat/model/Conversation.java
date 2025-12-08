@@ -15,6 +15,9 @@ import java.util.List;
 public class Conversation {
     @Id
     private String id;
+
+    private DeliveryStatus deliveryStatus = DeliveryStatus.NONE;
+
     private List<String> participantIds = new ArrayList<>();
     private String chatName;
 }

@@ -15,12 +15,12 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class ChatService {
-    private ConversationRepository conversationRepository;
-    private MessageRepository messageRepository;
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
 
     //Récupère l'ID d'une conversation existante ou en crée une nouvelle
     public String getOrCreateConversationId(String senderId, String recipientId){
-        return conversationRepository.findExistingConversation(senderId,recipientId)
+        return conversationRepository.findConversationByParticipants(senderId,recipientId)
                 .map(Conversation::getId)
                 .orElseGet(()->{
                    Conversation newConv = new Conversation();
@@ -36,10 +36,5 @@ public class ChatService {
         message.setTimestamp(new Date());
 
         return  messageRepository.save(message);
-    }
-
-    //Récupère l'historique
-    public List<Message> findChatMessages(String senderId, String recipientId){
-        Optional<Conversation> conversation = conversationRepository.findExistingConversation(senderId, recipientId);
     }
 }

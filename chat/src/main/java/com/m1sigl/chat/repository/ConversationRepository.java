@@ -10,6 +10,10 @@ import java.util.Optional;
 public interface ConversationRepository extends MongoRepository<Conversation,String> {
     List<Conversation> findByParticipantIds(String userId);
 
+    // On utilise @Query pour faire une requête JSON MongoDB native
+    // { 'participantIds': { $all: [id1, id2] } } signifie :
+    // "Trouve un doc où le tableau participantIds contient TOUS ces éléments"
     @Query("{ 'participantIds': { $all: [?0, ?1] } }")
-    Optional<Conversation> findExistingConversation(String user1, String user2);
+    Optional<Conversation> findConversationByParticipants(String senderId, String recipientId);
+
 }
