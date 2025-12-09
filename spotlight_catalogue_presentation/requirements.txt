@@ -1,0 +1,37 @@
+# Frameworks principaux
+Django==4.2.0
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.5
+
+mysqlclient==2.2.7       # client MySQL pour Python
+# Client Eureka
+py-eureka-client==0.11.2
+
+# Utilitaires
+requests==2.31.0
+python-decouple==3.8
+
+# Traitement du langage naturel
+nltk==3.9.1
+spacy==3.6.1
+
+# Pour les embeddings / recherche sémantique
+sentence-transformers==2.2.2
+
+# Pour l'IA
+anthropic==0.4.0  # Pour Claude
+openai==0.28.0    # Pour OpenAI
+
+
+# # Pour utiliser Claude (Anthropic) - RECOMMANDÉ
+# pip install anthropic
+
+# # OU pour OpenAI
+# pip install openai
+
+# # Pour le traitement du langage naturel
+# pip install nltk spacy
+
+# # Pour les embeddings (optionnel, pour recherche sémantique)
+# pip install sentence-transformers
