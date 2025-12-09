@@ -1,25 +1,22 @@
-# --- Java ---
+# --- Java & compilation ---
 *.class
-*.log
 *.jar
 *.war
 *.ear
-
-# --- Maven ---
 target/
+
+# --- Maven Wrapper ---
 !.mvn/wrapper/maven-wrapper.jar
 .mvn/wrapper/maven-wrapper.properties
 .mvn/wrapper/MavenWrapperDownloader.java
 
-# --- IDE (IntelliJ / VSCode / Eclipse) ---
-# IntelliJ IDEA
+# --- IDE ---
+# IntelliJ
 .idea/
 *.iml
 out/
-
 # VSCode
 .vscode/
-
 # Eclipse
 .project
 .classpath
@@ -30,20 +27,15 @@ out/
 .DS_Store
 .AppleDouble
 .LSOverride
-
 # Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# --- Spring Boot ---
-# fichiers générés
+# --- Spring Boot logs ---
 spring.log
+logs/
 
-# --- Tests ---
+# --- Test reports ---
 surefire-reports/
 failsafe-reports/
-
-# --- Logs ---
-*.log
-logs/
