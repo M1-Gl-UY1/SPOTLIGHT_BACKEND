@@ -2,15 +2,20 @@ package com.spotlight.offerandprestation.dto;
 
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.spotlight.offerandprestation.models.Avis;
 import com.spotlight.offerandprestation.models.Commande;
 import com.spotlight.offerandprestation.models.Media;
 import com.spotlight.offerandprestation.models.Pack;
 import com.spotlight.offerandprestation.models.ServiceOffre;
+import com.spotlight.offerandprestation.repository.AvisRepository;
 
 @Component
 public class DtoMapper {
+     @Autowired
+    private AvisRepository avisRepository;
 
     // Conversion Service -> DTO
     public ServiceOffreDTO toServiceDTO(ServiceOffre service) {
@@ -21,6 +26,9 @@ public class DtoMapper {
         dto.setCategorie(service.getCategorie());
         dto.setPrestataireId(service.getPrestataireId());
         dto.setDateCreation(service.getDateCreation());
+        Double moy = avisRepository.getMoyenneNoteByServiceId(service.getId());
+        dto.setNoteMoyenne(moy != null ? Math.round(moy * 10.0) / 10.0 : 0.0); 
+        dto.setNombreAvis(avisRepository.countByServiceOffreId(service.getId()));
 
         // Conversion des listes (Packs et Medias)
         if (service.getPacks() != null) {
@@ -79,4 +87,14 @@ public class DtoMapper {
         }
         return dto;
     }
+    public AvisDTO toAvisDTO(Avis avis) {
+        AvisDTO dto = new AvisDTO();
+        dto.setId(avis.getId());
+        dto.setNote(avis.getNote());
+        dto.setCommentaire(avis.getCommentaire());
+        dto.setClientId(avis.getClientId());
+        dto.setDateCreation(avis.getDateCreation());
+        return dto;
+    }
+
 }
