@@ -12,7 +12,7 @@ WORKDIR /app
 # On récupère le .jar généré à l'étape précédente
 COPY --from=build /app/target/*.jar app.jar
 
-# Configuration des variables d'environnement par défaut
+# Configuration des variables d'environnement par défaut 
 ENV EUREKA_URI=http://localhost:8761/eureka
 ENV RABBIT_HOST=localhost
 
