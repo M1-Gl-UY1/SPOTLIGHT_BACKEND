@@ -1,0 +1,49 @@
+# --- Java ---
+*.class
+*.log
+*.jar
+*.war
+*.ear
+
+# --- Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/MavenWrapperDownloader.java
+
+# --- IDE (IntelliJ / VSCode / Eclipse) ---
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# VSCode
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# --- OS ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Spring Boot ---
+# fichiers générés
+spring.log
+
+# --- Tests ---
+surefire-reports/
+failsafe-reports/
+
+# --- Logs ---
+*.log
+logs/
