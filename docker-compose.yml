@@ -4,45 +4,46 @@ services:
   # -----------------------------
   # 1. BASE DE DONNÉES (MySQL)
   # -----------------------------
-  mysqldb:
+  mysqldb-mod: # J'ai changé le nom pour éviter les conflits si tu fusionnes plus tard
     image: mysql:8.0
-    container_name: spotlight-mysql
+    container_name: spotlight-mysql-moderation
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: spotlight_offres_db 
+      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_DATABASE: moderation_db 
     ports:
-      - "3307:3306" 
+      # ATTENTION : Si le service Offres tourne déjà sur 3307, change ici pour 3308
+      - "3308:3306" 
     volumes:
-      - db_data:/var/lib/mysql
-    # --- NOYAU DE LA SOLUTION ---
-    # On vérifie toutes les 5 secondes si MySQL répond
+      - db_data_moderation:/var/lib/mysql 
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      # La commande ping avec mot de passe est la plus sûre pour le healthcheck
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-proot"]
       timeout: 20s
       retries: 10
+      start_period: 10s 
 
   # -----------------------------
-  # 2. MICROSERVICE OFFRES & PRESTATIONS
+  # 2. MICROSERVICE MODÉRATION
   # -----------------------------
-  service-offres:
-    build: ./offerandprestation 
-    container_name: ms-offres
+  moderation-service:
+    build: ./signal-moder-service
+    container_name: ms-moderation 
     ports:
-      - "8091:8091"
+      - "8084:8084" 
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/spotlight_offres_db?allowPublicKeyRetrieval=true&useSSL=false
+      # Note : On pointe vers 'mysqldb-mod' (le nom du service ligne 8)
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb-mod:3306/moderation_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: root 
       EUREKA_CLIENT_ENABLED: "false"
       SPRING_CLOUD_CONFIG_ENABLED: "false"
-    volumes:
-      - ./offerandprestation/uploads-spotlight:/app/uploads-spotlight
-    # --- NOYAU DE LA SOLUTION ---
-    # On attend que MySQL soit "Healthy" (prêt) avant de lancer Java
+
+  
+    
     depends_on:
-      mysqldb:
+      mysqldb-mod:
         condition: service_healthy
 
 volumes:
-  db_data:
+  db_data_moderation:

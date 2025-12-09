@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Service Base de Données
+  db:
+    image: mysql:8.0
+    container_name: spotlight_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: spotlight_db
+      MYSQL_USER: spotlight_user
+      MYSQL_PASSWORD: spotlight_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306" # Mappe le port 3306 du conteneur sur le 3307 de votre machine (pour éviter conflit si vous avez déjà mysql)
+
+  # Service Application Django
+  web:
+    build: .
+    container_name: spotlight_web
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app  # Synchronise votre code local avec le conteneur (Hot Reload)
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_NAME=spotlight_db
+      - DB_USER=spotlight_user
+      - DB_PASSWORD=spotlight_password
+      - DB_HOST=db
+      - DB_PORT=3306
+
+volumes:
+  db_data:
