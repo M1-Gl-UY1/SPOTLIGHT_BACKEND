@@ -1,16 +1,17 @@
 package com.m1sigl.chat.service;
 
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.m1sigl.chat.model.Conversation;
 import com.m1sigl.chat.model.Message;
 import com.m1sigl.chat.model.MessageStatus;
 import com.m1sigl.chat.repository.ConversationRepository;
 import com.m1sigl.chat.repository.MessageRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
