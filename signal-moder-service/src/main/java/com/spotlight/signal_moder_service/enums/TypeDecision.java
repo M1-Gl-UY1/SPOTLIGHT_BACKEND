@@ -1,0 +1,11 @@
+package com.spotlight.signal_moder_service.enums;
+
+public enum TypeDecision {
+    SUSPENSION_CLIENT,
+    SUSPENSION_PRESTATAIRE,
+    ANNULATION_SERVICE,
+    SUPPRESSION_COMMENTAIRE,
+    SUPPRESSION_TCHAT_MESSAGE,
+    AVERTISSEMENT_CLIENT,
+    AVERTISSEMENT_PRESTATAIRE
+}
