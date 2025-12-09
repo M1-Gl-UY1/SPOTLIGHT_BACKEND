@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # -----------------------------
+  # 1. BASE DE DONNÉES (MySQL)
+  # -----------------------------
+  mysqldb-mod: # J'ai changé le nom pour éviter les conflits si tu fusionnes plus tard
+    image: mysql:8.0
+    container_name: spotlight-mysql-moderation
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_DATABASE: moderation_db 
+    ports:
+      # ATTENTION : Si le service Offres tourne déjà sur 3307, change ici pour 3308
+      - "3308:3306" 
+    volumes:
+      - db_data_moderation:/var/lib/mysql 
+    healthcheck:
+      # La commande ping avec mot de passe est la plus sûre pour le healthcheck
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-proot"]
+      timeout: 20s
+      retries: 10
+      start_period: 10s 
+
+  # -----------------------------
+  # 2. MICROSERVICE MODÉRATION
+  # -----------------------------
+  moderation-service:
+    build: ./signal-moder-service
+    container_name: ms-moderation 
+    ports:
+      - "8084:8084" 
+    environment:
+      # Note : On pointe vers 'mysqldb-mod' (le nom du service ligne 8)
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb-mod:3306/moderation_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root 
+      EUREKA_CLIENT_ENABLED: "false"
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+
+  
+    
+    depends_on:
+      mysqldb-mod:
+        condition: service_healthy
+
+volumes:
+  db_data_moderation:
