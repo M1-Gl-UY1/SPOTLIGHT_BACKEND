@@ -1,37 +1,23 @@
-# Frameworks principaux
+# --- Frameworks principaux ---
 Django==4.2.0
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 django-filter==23.5
 
-mysqlclient==2.2.7       # client MySQL pour Python
-# Client Eureka
+# --- Base de données ---
+mysqlclient==2.2.7
+
+# --- Microservices ---
 py-eureka-client==0.11.2
 
-# Utilitaires
+# --- Utilitaires et Environnement ---
 requests==2.31.0
 python-decouple==3.8
+python-dotenv>=1.0.0
 
-# Traitement du langage naturel
-nltk==3.9.1
-spacy==3.6.1
+# --- Intelligence Artificielle (Client API uniquement) ---
+# J'ai mis à jour la version pour qu'elle marche avec ton code
+openai>=1.0.0
 
-# Pour les embeddings / recherche sémantique
-sentence-transformers==2.2.2
-
-# Pour l'IA
-anthropic==0.4.0  # Pour Claude
-openai==0.28.0    # Pour OpenAI
-
-
-# # Pour utiliser Claude (Anthropic) - RECOMMANDÉ
-# pip install anthropic
-
-# # OU pour OpenAI
-# pip install openai
-
-# # Pour le traitement du langage naturel
-# pip install nltk spacy
-
-# # Pour les embeddings (optionnel, pour recherche sémantique)
-# pip install sentence-transformers
+# --- Documentation ---
+drf-yasg>=1.21.7
