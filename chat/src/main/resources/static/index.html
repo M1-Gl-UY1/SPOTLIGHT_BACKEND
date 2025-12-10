@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chat WebSocket + Media</title>
+    <!-- Import des librairies nécessaires pour le WebSocket -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        #chat-content { height: 400px; overflow-y: scroll; border: 1px solid #333; margin-top: 10px; padding: 10px;}
+        .message { margin-bottom: 10px; padding: 8px; background: #f1f1f1; border-radius: 4px; }
+        .my-message { background: #d1e7dd; text-align: right; }
+        .hidden { display: none; }
+
+        /* Styles pour les médias */
+        .msg-img { max-width: 200px; border-radius: 5px; margin-top: 5px; cursor: pointer; }
+        .msg-video { max-width: 250px; border-radius: 5px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<h2>Test Microservice Chat 🚀 (Avec Fichiers)</h2>
+
+<!-- Zone de Connexion -->
+<div id="login-page" class="box">
+    <h3>1. Connexion</h3>
+    <input type="text" id="username" placeholder="Entrez votre ID (ex: user1)" />
+    <button onclick="connect()">Se connecter</button>
+</div>
+
+<!-- Zone de Chat (Cachée au début) -->
+<div id="chat-page" class="hidden box">
+    <h3>2. Discussion</h3>
+    <p>Connecté en tant que : <b id="user-id-display"></b></p>
+
+    <input type="text" id="recipient" placeholder="ID du destinataire (ex: user2)" />
+    <br><br>
+
+    <!-- Zone d'envoi -->
+    <div style="display: flex; gap: 5px;">
+        <!-- Input Fichier Caché -->
+        <input type="file" id="file-input" style="display: none;" onchange="uploadFile()" />
+
+        <!-- Bouton pour déclencher l'upload -->
+        <button onclick="document.getElementById('file-input').click()" title="Envoyer une image/vidéo">📎</button>
+
+        <input type="text" id="message" placeholder="Votre message..." style="flex: 1;" />
+        <button onclick="sendMessage()">Envoyer</button>
+    </div>
+
+    <div id="chat-content">
+        <!-- Les messages s'afficheront ici -->
+    </div>
+</div>
+
+<script>
+    var stompClient = null;
+    var myId = null;
+
+    function connect() {
+        myId = document.getElementById("username").value.trim();
+        if(!myId) return alert("Entrez un nom !");
+
+        // Connexion WebSocket
+        var socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, onConnected, onError);
+    }
+
+    function onConnected() {
+        document.getElementById("login-page").classList.add("hidden");
+        document.getElementById("chat-page").classList.remove("hidden");
+        document.getElementById("user-id-display").innerText = myId;
+
+        // Abonnement RabbitMQ
+        stompClient.subscribe('/user/' + myId + '/queue/messages', onMessageReceived);
+    }
+
+    function onError(error) {
+        console.log("Erreur : " + error);
+        alert("Impossible de se connecter au WebSocket.");
+    }
+
+    // --- ENVOI TEXTE ---
+    function sendMessage() {
+        var recipientId = document.getElementById("recipient").value.trim();
+        var content = document.getElementById("message").value.trim();
+
+        if(content && stompClient) {
+            var chatMessage = {
+                senderId: myId,
+                recipientId: recipientId,
+                content: content,
+                type: "TEXT",
+                timestamp: new Date()
+            };
+
+            stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+            showMessage(chatMessage, true);
+            document.getElementById("message").value = '';
+        }
+    }
+
+    // --- UPLOAD & ENVOI FICHIER ---
+    async function uploadFile() {
+        var recipientId = document.getElementById("recipient").value.trim();
+        if(!recipientId) return alert("Entrez d'abord un destinataire !");
+
+        var fileInput = document.getElementById("file-input");
+        var file = fileInput.files[0];
+        if (!file) return;
+
+        // 1. Détecter le type
+        var type = "FILE";
+        if (file.type.startsWith("image/")) type = "IMAGE";
+        else if (file.type.startsWith("video/")) type = "VIDEO";
+
+        // 2. Préparer l'envoi HTTP
+        var formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            // 3. Appel au Backend (REST)
+            var response = await fetch("http://localhost:8080/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if(response.ok) {
+                var fileUrl = await response.text(); // L'URL retournée par le serveur
+
+                // 4. Envoi du message WebSocket avec l'URL
+                var chatMessage = {
+                    senderId: myId,
+                    recipientId: recipientId,
+                    content: file.name, // Nom du fichier
+                    mediaUrl: fileUrl,  // URL du fichier
+                    type: type,
+                    timestamp: new Date()
+                };
+
+                stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+                showMessage(chatMessage, true);
+
+            } else {
+                alert("Erreur lors de l'upload");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Erreur serveur upload");
+        }
+
+        fileInput.value = ""; // Reset du champ
+    }
+
+    // --- RECEPTION ---
+    function onMessageReceived(payload) {
+        var message = JSON.parse(payload.body);
+        console.log("Reçu : ", message);
+        showMessage(message, false);
+    }
+
+    // --- AFFICHAGE (RENDU HTML) ---
+    function showMessage(message, isMine) {
+        var messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        if(isMine) messageElement.classList.add('my-message');
+
+        // Préparation du contenu HTML selon le type
+        var htmlContent = `<strong>${isMine ? "Moi" : message.senderId}:</strong> `;
+
+        // Sécurité : on s'assure d'avoir un type par défaut
+        var type = message.type || "TEXT";
+
+        if (type === "IMAGE") {
+            htmlContent += `<br><img src="${message.mediaUrl}" class="msg-img" alt="image">`;
+            htmlContent += `<br><small>${message.content}</small>`;
+        }
+        else if (type === "VIDEO") {
+            htmlContent += `<br><video src="${message.mediaUrl}" controls class="msg-video"></video>`;
+            htmlContent += `<br><small>${message.content}</small>`;
+        }
+        else if (type === "FILE") {
+            htmlContent += `<br><a href="${message.mediaUrl}" target="_blank">📄 ${message.content}</a>`;
+        }
+        else {
+            // Texte simple
+            htmlContent += ` ${message.content}`;
+        }
+
+        // Injection HTML (Attention : en prod, il faudrait désinfecter le HTML pour éviter les failles XSS)
+        messageElement.innerHTML = htmlContent;
+
+        document.getElementById("chat-content").appendChild(messageElement);
+        // Scroll automatique vers le bas
+        document.getElementById("chat-content").scrollTop = document.getElementById("chat-content").scrollHeight;
+    }
+</script>
+</body>
+</html>
