@@ -235,9 +235,28 @@ services:
     networks:
       - spotlight-net
 
+  # ==============================#
+  # Catalogue presetation Service #
+  # ==============================#
+  catalogue-prestation-db:
+    image: mysql:8.0
+    container_name: catalogue_prestation_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: catalogue_prestation_db
+      MYSQL_USER: catalogue_user
+      MYSQL_PASSWORD: catalogue_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3310:3306"
+    volumes:
+      - catalogue_prestation_db_data:/var/lib/mysql
+    networks:
+      - spotlight-net
   # ===========================
   # Catalogue Python
   # ===========================
+
   catalogue-service-python:
     build: ./spotlight_catalogue_presentation
     container_name: catalogue-service-python
@@ -247,5 +266,6 @@ services:
     depends_on:
       - registry-service
       - config-service
+      - catalogue-prestation-db
     networks:
       - spotlight-net
