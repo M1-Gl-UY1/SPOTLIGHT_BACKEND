@@ -125,7 +125,7 @@ services:
   # Chat Service
   # ===========================
   chat-service:
-    build: ./chat-service
+    build: ./chat
     container_name: chat-service
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
