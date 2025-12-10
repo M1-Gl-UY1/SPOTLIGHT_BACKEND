@@ -7,7 +7,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Étape 2 : Run (Image finale légère)
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 # On récupère le .jar généré à l'étape précédente
 COPY --from=build /app/target/*.jar app.jar
