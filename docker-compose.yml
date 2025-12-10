@@ -9,13 +9,14 @@ volumes:
   mysql_signal_moder_data:
   mysql_signasl_data:
   postgres_data:
+  catalogue_prestation_db_data:
 
 services:
 
   # ===========================
   # MySQL — SIGNASL (3309)
   # ===========================
-  mysql_signasl:
+  mysql_offre_prestaion_db:
     image: mysql:8.0
     container_name: mysql_signasl
     restart: always
@@ -82,23 +83,6 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
-    networks:
-      - spotlight-net
-
-  # ===========================
-  # MySQL OFFRE (3306)
-  # ===========================
-  mysql_offre_prestaion_db:
-    image: mysql:8.0
-    container_name: mysql_offre_prestaion_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: spotlight_offres_db
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_offre_data:/var/lib/mysql
     networks:
       - spotlight-net
 
@@ -261,11 +245,14 @@ services:
     build: ./spotlight_catalogue_presentation
     container_name: catalogue-service-python
     environment:
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+      DATABASE_HOST: catalogue-prestation-db
+      DATABASE_PORT: 3306
+      DATABASE_NAME: catalogue_prestation_db
+      DATABASE_USER: catalogue_user
+      DATABASE_PASSWORD: catalogue_password
+      EUREKA_SERVER: http://registry-service:8761/eureka
     depends_on:
       - registry-service
-      - config-service
       - catalogue-prestation-db
     networks:
       - spotlight-net
