@@ -15,11 +15,14 @@ services:
       - db_data:/var/lib/mysql
     ports:
       - "3307:3306" # Mappe le port 3306 du conteneur sur le 3307 de votre machine (pour éviter conflit si vous avez déjà mysql)
+    networks:
+      - catalogue_presentation_network
 
   # Service Application Django
-  web:
+  catalogue_presentation:
     build: .
-    container_name: spotlight_web
+    container_name: spotlight_catalogue_presentation
+    restart: always
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app  # Synchronise votre code local avec le conteneur (Hot Reload)
@@ -33,6 +36,13 @@ services:
       - DB_PASSWORD=spotlight_password
       - DB_HOST=db
       - DB_PORT=3306
+    networks:
+      - catalogue_presentation_network
 
+networks:
+  catalogue_presentation_network:
+    driver: bridge
+
+    
 volumes:
   db_data:
