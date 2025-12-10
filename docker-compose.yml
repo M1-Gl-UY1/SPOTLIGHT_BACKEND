@@ -1,63 +1,251 @@
 version: '3.8'
 
-services:
-  # --- INFRASTRUCTURE ---
-  
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
+networks:
+  spotlight-net:
+    driver: bridge
 
+volumes:
+  mysql_offre_data:
+  mysql_signal_moder_data:
+  mysql_signasl_data:
+  postgres_data:
+
+services:
+
+  # ===========================
+  # MySQL — SIGNASL (3309)
+  # ===========================
+  mysql_signasl:
+    image: mysql:8.0
+    container_name: mysql_signasl
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: spotlight_offres_db
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_signasl_data:/var/lib/mysql
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # RabbitMQ
+  # ===========================
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
-      - "61613:61613" # STOMP
+      - "61613:61613"
     command: /bin/bash -c "rabbitmq-plugins enable rabbitmq_stomp && rabbitmq-server"
+    networks:
+      - spotlight-net
 
-  # --- MICROSERVICES DE BASE ---
+  # ===========================
+  # Config Server
+  # ===========================
+  config-service:
+    build: ./config-service
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/M1-Gl-UY1/config-repo-spotlight.git
+    networks:
+      - spotlight-net
 
-  discovery-service:
-    build: ./discovery-service # Chemin vers le dossier du projet Eureka
-    container_name: discovery-service
+  # ===========================
+  # Eureka Registry
+  # ===========================
+  registry-service:
+    build: ./registry-service
+    container_name: registry-service
     ports:
       - "8761:8761"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-
-  gateway-service:
-    build: ./gateway-service
-    container_name: gateway-service
-    ports:
-      - "80:8080" # On expose la gateway sur le port 80 (standard web)
-    environment:
-      - EUREKA_URI=http://discovery-service:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
     depends_on:
-      - discovery-service
+      - config-service
+    networks:
+      - spotlight-net
 
-  # --- TON CHAT SERVICE (JAVA) ---
-  
+  # ===========================
+  # API Gateway
+  # ===========================
+  proxy-service:
+    build: ./proxy-service
+    container_name: proxy-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # MySQL OFFRE (3306)
+  # ===========================
+  mysql_offre_prestaion_db:
+    image: mysql:8.0
+    container_name: mysql_offre_prestaion_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: spotlight_offres_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_offre_data:/var/lib/mysql
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # Service OFFER
+  # ===========================
+  offerandprestation:
+    build: ./offerandprestation
+    container_name: offerandprestation
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql_offre_prestaion_db:3306/spotlight_offres_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+      FILE_UPLOAD_DIR: /uploads-spotlight
+    ports:
+      - "8093:8093"
+    depends_on:
+      - mysql_offre_prestaion_db
+      - registry-service
+      - config-service
+    volumes:
+      - ./uploads-spotlight:/uploads-spotlight
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # MongoDB pour CHAT
+  # ===========================
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # Chat Service
+  # ===========================
   chat-service:
-    build: ./chat-service # Le dossier où on a mis le Dockerfile à l'étape 1
+    build: ./chat-service
     container_name: chat-service
     environment:
-      - MONGO_HOST=mongodb            # Nom du service docker défini plus haut
-      - RABBIT_HOST=rabbitmq          # Nom du service docker
-      - EUREKA_URI=http://discovery-service:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+      MONGO_HOST: mongodb
+      RABBIT_HOST: rabbitmq
     depends_on:
       - mongodb
       - rabbitmq
-      - discovery-service
+      - registry-service
+      - config-service
+    networks:
+      - spotlight-net
 
-  # --- EXEMPLE AUTRES SERVICES (Django/Node) ---
-  
-  user-service-django:
+  # ===========================
+  # MySQL MODERATION (3308)
+  # ===========================
+  mysql-signal-moder-service:
+    image: mysql:8.0
+    container_name: mysql-signal-moder-service
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: moderation_db
+      MYSQL_USER: spotlight_user
+      MYSQL_PASSWORD: spotlight_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_signal_moder_data:/var/lib/mysql
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # Signal Moder Service
+  # ===========================
+  signal-moder-service:
+    build: ./signal-moder-service
+    container_name: signal-moder-service
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+      DB_HOST: mysql-signal-moder-service
+      DB_NAME: moderation_db
+      DB_USER: spotlight_user
+      DB_PASSWORD: spotlight_password
+    depends_on:
+      - mysql-signal-moder-service
+      - registry-service
+      - config-service
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # PostgreSQL
+  # ===========================
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # User Service (Node.js)
+  # ===========================
+  user-service:
     build: ./user-service
     container_name: user-service
-    command: python manage.py runserver 0.0.0.0:8000
     environment:
-      - DATABASE_URL=postgres://...
-      - EUREKA_URL=http://discovery-service:8761/eureka/
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_NAME: user_db
+      EUREKA_HOST: registry-service
+      EUREKA_PORT: 8761
+      PORT: 3000
+    depends_on:
+      - postgres
+      - registry-service
+      - config-service
+    networks:
+      - spotlight-net
+
+  # ===========================
+  # Catalogue Python
+  # ===========================
+  catalogue-service-python:
+    build: ./spotlight_catalogue_presentation
+    container_name: catalogue-service-python
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
+    depends_on:
+      - registry-service
+      - config-service
+    networks:
+      - spotlight-net
