@@ -1,24 +1,13 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: chat-service
-
-#Config MongoDB
-data:
-  mongodb:
-    uri: mongodb://${MONGO_HOST:localhost}:27017/chat_db
-    auto-index-creation: true
-
-#Config RabbitMq
-rabbitmq:
-  host: ${RABBIT_HOST:localhost}
-  port: 5672
-  username: guest
-  password: guest
-
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+  
+  
+  config:
+    import: "optional:configserver:http://localhost:8888/"
+  
+  cloud:
+    config:
+      fail-fast: true # Si le config server est down, l'app refuse de démarrer (sécurité)
+      retry:
+        enabled: true
