@@ -18,19 +18,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
-    public  void configureMessageBroker(MessageBrokerRegistry registry){
-        // Préfixe pour les routes destinées au serveur (@MessageMapping)
-        registry.setApplicationDestinationPrefixes("/app");
-
-        // Configuration du BROKER (Relais vers RabbitMQ)
-        // Les clients s'abonneront à des topics commençant par /user ou /topic
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost("localhost")
-                .setRelayPort(61613) // Port STOMP du RabbitMQ Docker
+                .setRelayHost("rabbitmq")
+                .setRelayPort(61613)
                 .setClientLogin("guest")
-                .setClientPasscode("guest");
-
-        // Préfixe spécifique pour les messages privés (1-to-1)
-        registry.setUserDestinationPrefix("/user");
+                .setClientPasscode("guest")
+                .setSystemLogin("guest")
+                .setSystemPasscode("guest");
+        registry.setApplicationDestinationPrefixes("/app");
     }
+
 }

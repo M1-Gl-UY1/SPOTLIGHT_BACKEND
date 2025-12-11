@@ -11,6 +11,7 @@ const cookieSession = require('cookie-session');
 const passport = require('passport');
 const cors = require('cors');
 
+
 // ============================================================
 // 1. CHARGEMENT DE LA CONFIGURATION (Config Server)
 // ============================================================
@@ -20,11 +21,30 @@ loadConfig().then(async () => {
   // 2. IMPORT DES MODULES DEPENDANTS DE LA CONFIG (DB, ETC.)
   // ============================================================
   // On ne les importe que maintenant, car process.env est enfin rempli !
-  const connectDB = require('./config/db'); 
-  const db = require('./config/db');
-  const sequelize = require('./sequelize');
-  const { createAdmin, seedDatabase } = require('./db/init');
-  
+    const connectDB = require('./config/db');
+    const db = require('./config/db');
+    const sequelize = require('./sequelize');
+    const { createAdmin, seedDatabase } = require('./db/init');
+
+    const connectWithRetry = async (maxRetries = 10, delayMs = 3000) => {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                // L'étape critique
+                await db.createDatabase();
+                await sequelize.authenticate(); // Teste la connexion
+                console.log("Database connection successful.");
+                return true;
+            } catch (err) {
+                if (i < maxRetries - 1) {
+                    console.warn(`Connection refused. Retrying in ${delayMs / 1000}s... (${i + 1}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                } else {
+                    throw err; // Échec après toutes les tentatives
+                }
+            }
+        }
+    };
+
   // Initialisation de l'App
   const app = express();
   
@@ -44,7 +64,7 @@ loadConfig().then(async () => {
 
   const corsOptions = {
     credentials: true,
-    origin: 'https://mimlyricstest5.onrender.com', // Pense à ajouter localhost si besoin
+    origin: 'https://mimlyricstest5.onrender.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
   };
   app.use(cors(corsOptions));
@@ -57,16 +77,16 @@ loadConfig().then(async () => {
   // 3. INITIALISATION BASE DE DONNÉES
   // ============================================================
   try {
-    await db.createDatabase();
-    // Load all models BEFORE syncing if needed
-    // require("./models/User")(sequelize);
-    
-    await sequelize.sync({ force: false });
-    await seedDatabase();
-    console.log("✅ All models synced and DB seeded");
-  } catch (err) {
-    console.error("❌ Database initialization failed:", err);
-  }
+      await connectWithRetry(); // Attente et tentatives jusqu'à succès
+
+      // Maintenant que nous sommes connectés, on peut synchroniser
+      await sequelize.sync({ force: false });
+      await seedDatabase();
+      console.log("All models synced and DB seeded");
+    } catch (err) {
+      console.error("Database initialization failed after all retries:", err);
+      process.exit(1); // Arrête le service si la DB est inaccessible
+    }
 
   // Passport config
   require('./utils/passport-google');
@@ -91,7 +111,7 @@ loadConfig().then(async () => {
     cors: {
       credentials: true,
       origin: function(origin, callback) {
-        const allowedOrigins = ['http://localhost:3001', 'http://localhost:5173']; // Ajoute tes ports frontends
+        const allowedOrigins = ['*'];
         if (!origin || allowedOrigins.indexOf(origin) !== -1) callback(null, true);
         else callback(new Error('Not allowed by CORS'));
       },
@@ -149,7 +169,7 @@ loadConfig().then(async () => {
     // --- ENREGISTREMENT EUREKA DYNAMIQUE ---
     
     // Dans Docker, le hostname est souvent l'ID du container ou le nom du service
-    const hostName = process.env.EUREKA_INSTANCE_HOSTNAME || 'localhost';
+    const hostName = process.env.EUREKA_INSTANCE_HOSTNAME || 'regisrty-service';
     const ipAddr = process.env.EUREKA_INSTANCE_IP_ADDRESS || '127.0.0.1';
 
     const client = new Eureka({
@@ -170,18 +190,18 @@ loadConfig().then(async () => {
         },
       },
       eureka: {
-        host: process.env.EUREKA_HOST || 'localhost',
+        host: process.env.EUREKA_HOST || 'registry-service',
         port: process.env.EUREKA_PORT || 8761,
         servicePath: '/eureka/apps/'
       },
     });
 
     client.start((error) => {
-      console.log(error || '✅ User Service registered to Eureka');
+      console.log(error || ' User Service registered to Eureka');
     });
   });
 
 }).catch(err => {
-  console.error("❌ CRITICAL ERROR: Could not load configuration or start server", err);
+  console.error(" CRITICAL ERROR: Could not load configuration or start server", err);
   process.exit(1);
 });
