@@ -1,0 +1,100 @@
+name: Build and Push All Services to Docker Hub
+
+# DÉCLENCHEUR : Uniquement quand on push sur la branche 'imelda'
+on:
+  push:
+    branches: [ "imelda" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Récupération du code source
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Connexion à Docker Hub (Utilise tes Secrets)
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ======================================================
+      # CONSTRUCTION ET ENVOI DES IMAGES (SERVICE PAR SERVICE)
+      # ======================================================
+
+      # --- 1. INFRA: Config Service ---
+      - name: Build Config Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./config-service
+          file: ./config-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/config-service:latest
+
+      # --- 2. INFRA: Registry Service (Eureka) ---
+      - name: Build Registry Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./registry-service
+          file: ./registry-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/registry-service:latest
+
+      # --- 3. INFRA: Proxy Service (Gateway) ---
+      - name: Build Proxy Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./proxy-service
+          file: ./proxy-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/proxy-service:latest
+
+      # --- 4. METIER: User Service (Node.js) ---
+      - name: Build User Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./user-service
+          file: ./user-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/userservice:latest
+
+      # --- 5. METIER: Chat Service (Java) ---
+      # Attention: Le dossier s'appelle 'chat' sur ton disque
+      - name: Build Chat Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./chat
+          file: ./chat/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/chat:latest
+
+      # --- 6. METIER: Offer Service (Java) ---
+      # Dossier: offerandprestation
+      - name: Build Offer Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./offerandprestation
+          file: ./offerandprestation/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/offerandprestation:latest
+
+      # --- 7. METIER: Signal Moderation (Java) ---
+      - name: Build Signal Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./signal-moder-service
+          file: ./signal-moder-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/signal-moder-service:latest
+
+      # --- 8. METIER: Catalogue (Django) ---
+      # Dossier: spotlight_catalogue_presentation
+      - name: Build Catalogue Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./spotlight_catalogue_presentation
+          file: ./spotlight_catalogue_presentation/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/spotlight_catalogue_presentation:latest
