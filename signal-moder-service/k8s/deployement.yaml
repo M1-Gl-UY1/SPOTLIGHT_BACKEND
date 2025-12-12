@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signal-moder-service
+  namespace: microservices
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: signal-moder-service
+  template:
+    metadata:
+      labels:
+        app: signal-moder-service
+    spec:
+      containers:
+        - name: signal-moder-service
+          image: emilekmddev/spotlight:signal-moder-service
+          ports:
+            - containerPort: 8095
+          env:
+
+            # ---- SPRING CONFIG IMPORTANT ----
+            - name: SPRING_APPLICATION_NAME
+              value: "signal-moder-service"
+
+            - name: SERVER_PORT
+              value: "8095"
+
+            # ---- BASE DE DONNÉES ----
+            # Remplace les variables ${DB_HOST}, etc.
+            - name: DB_HOST
+              value: "mysql-signal-moder-service"
+
+            - name: DB_NAME
+              value: "moderation_db"
+
+            - name: DB_USER
+              value: "spotlight_user"
+
+            - name: DB_PASSWORD
+              value: "spotlight_password"
+
+            # Si tu veux ignorer DB_HOST/DB_NAME et mettre URL directe :
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-signal-moder-service:3306/moderation_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false"
+
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "spotlight_user"
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "spotlight_password"
+
+            # ---- EUREKA ----
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://registry-service:8761/eureka/"
+
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "true"
+
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "true"
+
+            # ---- CONFIG SERVER ----
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-service:8888/"

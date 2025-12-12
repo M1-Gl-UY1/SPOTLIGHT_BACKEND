@@ -1,13 +1,4 @@
 spring:
-  application:
-    name: chat-service
-  
-  
-  config:
-    import: "optional:configserver:http://localhost:8888/"
-  
   cloud:
     config:
-      fail-fast: true # Si le config server est down, l'app refuse de démarrer (sécurité)
-      retry:
-        enabled: true
+      uri: http://config-service:8888

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+  namespace: microservices
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: emilekmddev/spotlight:chat-service
+          ports:
+            - containerPort: 8096
+          env:
+
+            # --- APPLICATION NAME & PORT ---
+            - name: SPRING_APPLICATION_NAME
+              value: "chat-service"
+
+            - name: SERVER_PORT
+              value: "8096"
+
+            # --- MONGODB ---
+            - name: MONGO_HOST
+              value: "mongodb"
+
+            # URI finale utilisée par Spring :
+            # spring.data.mongodb.uri = mongodb://mongodb:27017/chat_db
+            - name: SPRING_DATA_MONGODB_URI
+              value: "mongodb://mongodb:27017/chat_db"
+
+            # --- RABBITMQ ---
+            - name: RABBIT_HOST
+              value: "rabbitmq"
+
+            - name: SPRING_RABBITMQ_HOST
+              value: "rabbitmq"
+
+            - name: SPRING_RABBITMQ_PORT
+              value: "5672"
+
+            - name: SPRING_RABBITMQ_USERNAME
+              value: "guest"
+
+            - name: SPRING_RABBITMQ_PASSWORD
+              value: "guest"
+
+            # --- EUREKA ---
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://registry-service:8761/eureka/"
+
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "true"
+
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "true"
+
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+
+            - name: EUREKA_INSTANCE_INITIAL_INSTANCE_INFO_REPLICATION_INTERVAL_SECONDS
+              value: "10"
+
+            # --- CONFIG SERVER ---
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-service:8888/"

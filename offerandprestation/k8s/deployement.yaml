@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: offreandprestation-service
+  namespace: microservices
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: offreandprestation-service
+  template:
+    metadata:
+      labels:
+        app: offreandprestation-service
+    spec:
+      containers:
+        - name: offreandprestation-service
+          image: emilekmddev/spotlight:offerandprestation
+          ports:
+            - containerPort: 8093
+          env:
+
+            # --- APPLICATION NAME & PORT ---
+            - name: SPRING_APPLICATION_NAME
+              value: "offerandprestation"
+
+            - name: SERVER_PORT
+              value: "8093"
+
+            # --- BASE DE DONNÉES ---
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql_offre_prestaion_db:3306/spotlight_offres_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false"
+
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "root"
+
+            # --- UPLOADS ---
+            - name: FILE_UPLOAD_DIR
+              value: "/uploads-spotlight"
+
+            # --- EUREKA ---
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://registry-service:8761/eureka/"
+
+            - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+              value: "true"
+
+            - name: EUREKA_CLIENT_FETCH_REGISTRY
+              value: "true"
+
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+
+            # --- CONFIG SERVER ---
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-service:8888/"

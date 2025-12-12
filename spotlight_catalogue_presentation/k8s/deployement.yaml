@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue-prestation-service
+  namespace: microservices
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: catalogue-prestation-service
+  template:
+    metadata:
+      labels:
+        app: catalogue-prestation-service
+    spec:
+containers:
+  - name: catalogue-prestation-service
+    image: emilekmddev/spotlight:catalogue-prestation-service
+    ports:
+      - containerPort: 8000
+    env:
+      - name: SPRING_APPLICATION_NAME
+        value: "catalogue-service-python"
+
+      - name: SERVER_PORT
+        value: "8000"
+
+      - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        value: "http://registry-service:8761/eureka/"
+
+      - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+        value: "true"
+
+      - name: EUREKA_CLIENT_FETCH_REGISTRY
+        value: "true"
+
+      - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+        value: "true"
+
+      - name: EUREKA_INSTANCE_HOSTNAME
+        value: "catalogue-service-python"
+
+      # Base de données Django lue par Spring pour transmettre
+      - name: CATALOGUE_DATABASE_NAME
+        value: "catalogue_prestation_db"
+
+      - name: CATALOGUE_DATABASE_HOST
+        value: "catalogue-prestation-db"
+
+      - name: CATALOGUE_DATABASE_PORT
+        value: "3306"
+
+      - name: CATALOGUE_DATABASE_USER
+        value: "catalogue_user"
+
+      - name: CATALOGUE_DATABASE_PASSWORD
+        value: "catalogue_password"

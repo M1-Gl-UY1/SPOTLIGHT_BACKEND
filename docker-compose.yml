@@ -151,7 +151,7 @@ services:
     container_name: offerandprestation
     #restart on-failure
     ports:
-      - "8093:8093"
+      - "8091:8091"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql_offre_prestaion_db:3306/spotlight_offres_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: root
@@ -165,6 +165,7 @@ services:
       - mysql_offre_prestaion_db
       - registry-service
       - config-service
+
     networks:
       - spotlight-net
 
@@ -182,6 +183,8 @@ services:
       - mysql-signal-moder-service
       - registry-service
       - config-service
+    ports:
+      - "8084:8084"
     networks:
       - spotlight-net
 

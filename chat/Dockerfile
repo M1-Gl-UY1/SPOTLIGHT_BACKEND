@@ -13,8 +13,8 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Configuration des variables d'environnement par défaut 
-ENV EUREKA_URI=http://localhost:8761/eureka
-ENV RABBIT_HOST=localhost
+ENV EUREKA_URI=http://registry-service:8761/eureka
+ENV RABBIT_HOST=rabbitmq
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
