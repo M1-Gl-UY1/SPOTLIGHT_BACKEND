@@ -33,11 +33,16 @@ services:
     command: /bin/bash -c "rabbitmq-plugins enable rabbitmq_stomp && rabbitmq-server"
     networks:
       - spotlight-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   mysql_offre_prestaion_db:
     image: mysql:8.0
     container_name: mysql_offre_prestaion_db
-    #restart always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: spotlight_offres_db
@@ -51,7 +56,7 @@ services:
   mysql-signal-moder-service:
     image: mysql:8.0
     container_name: mysql-signal-moder-service
-    #restart always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: moderation_db
@@ -67,7 +72,7 @@ services:
   catalogue-prestation-db:
     image: mysql:8.0
     container_name: catalogue_prestation_db
-    #restart always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: catalogue_prestation_db
@@ -98,48 +103,64 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 5
 
   # ====================================================
   # 2. SOCLE SPRING CLOUD
   # ====================================================
   config-service:
-    build: ./config-service
+    # Nom correct selon ton workflow
+    image: imelda2627/config-service:latest
     container_name: config-service
-    #restart on-failure
+    restart: unless-stopped
     ports:
       - "8888:8888"
     environment:
       SPRING_CLOUD_CONFIG_SERVER_GIT_URI: https://github.com/M1-Gl-UY1/config-repo-spotlight.git
     networks:
       - spotlight-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
 
   registry-service:
-    build: ./registry-service
+    # Nom correct selon ton workflow
+    image: imelda2627/registry-service:latest
     container_name: registry-service
-    #restart on-failure
+    restart: unless-stopped
     ports:
       - "8761:8761"
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
       SPRING_CLOUD_CONFIG_URI: http://config-service:8888
     depends_on:
-      - config-service
+      config-service:
+        condition: service_healthy
     networks:
       - spotlight-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
 
   proxy-service:
-    build: ./proxy-service
+    # Nom correct selon ton workflow
+    image: imelda2627/proxy-service:latest
     container_name: proxy-service
-    #restart on-failure
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
     depends_on:
-      - registry-service
-      - config-service
+      registry-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
     networks:
       - spotlight-net
 
@@ -147,9 +168,10 @@ services:
   # 3. MICROSERVICES MÉTIERS
   # ====================================================
   offerandprestation:
-    build: ./offerandprestation
+    # CORRIGÉ : Nom exact du workflow
+    image: imelda2627/offerandprestation:latest
     container_name: offerandprestation
-    #restart on-failure
+    restart: unless-stopped
     ports:
       - "8091:8091"
     environment:
@@ -165,14 +187,14 @@ services:
       - mysql_offre_prestaion_db
       - registry-service
       - config-service
-
     networks:
       - spotlight-net
 
   signal-moder-service:
-    build: ./signal-moder-service
+    # CORRIGÉ : Nom exact du workflow
+    image: imelda2627/signal-moder-service:latest
     container_name: signal-moder-service
-    #restart on-failure
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-signal-moder-service:3306/moderation_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: spotlight_user
@@ -189,18 +211,15 @@ services:
       - spotlight-net
 
   chat-service:
-    build: ./chat
+    # CORRIGÉ : Nom exact du workflow (chat, pas chat-service)
+    image: imelda2627/chat:latest
     container_name: chat-service
-    #restart on-failure
+    restart: unless-stopped
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
       SPRING_APPLICATION_NAME: chat-service
-      # Ancienne variable (à supprimer ou ignorer) : MONGO_HOST: mongodb
-
-      # Nouvelle variable recommandée pour Spring Data MongoDB:
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/chatdb  # Remplacez 'chatdb' par le nom de votre base de données si nécessaire.
-
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/chatdb
       RABBIT_HOST: rabbitmq
     depends_on:
       - mongodb
@@ -211,9 +230,8 @@ services:
       - spotlight-net
 
   user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
+    # CORRIGÉ : Nom exact du workflow (userservice, pas user-service)
+    image: imelda2627/userservice:latest
     container_name: user-service
     restart: unless-stopped
     depends_on:
@@ -222,16 +240,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      # Configuration pour le loader (config-loader.js)
       - CONFIG_SERVER_URL=http://config-service:8888/user-service/default
-
-      # Configuration pour Eureka (server.js)
       - EUREKA_HOST=registry-service
       - EUREKA_PORT=8761
-      - EUREKA_INSTANCE_HOSTNAME=user-service # CRUCIAL pour que la Gateway le trouve !
+      - EUREKA_INSTANCE_HOSTNAME=user-service
       - EUREKA_INSTANCE_IP_ADDRESS=user-service
-
-      # Configuration DB et App
       - PORT=5000
       - PG_HOST=postgres
       - PG_PORT=5432
@@ -244,17 +257,17 @@ services:
     networks:
       - spotlight-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"] # Adapte le path si besoin (ex: /health)
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 40s
 
-
   catalogue-service-python:
-    build: ./spotlight_catalogue_presentation
+    # CORRIGÉ : Nom exact du workflow (nom très long)
+    image: imelda2627/spotlight_catalogue_presentation:latest
     container_name: catalogue-service-python
-    #restart on-failure
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:

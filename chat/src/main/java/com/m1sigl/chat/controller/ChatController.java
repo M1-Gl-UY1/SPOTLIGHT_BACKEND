@@ -13,31 +13,34 @@ import org.springframework.stereotype.Controller;
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
+    
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;
     private final ChatService chatService;
 
+    // Correspond à la spécification WS /chat (via /app/chat dans config STOMP)
     @MessageMapping("/chat")
     public void processMessage(@Payload Message chatMessage){
-        // 1. Sauvegarder dans MongoDB
-
+        
+        // 1. Gestion Conversation ID
         String conversationId = chatService.getOrCreateConversationId(
                 chatMessage.getSenderId(),
                 chatMessage.getRecipientId()
         );
 
         chatMessage.setConversationId(conversationId);
+        
+        // 2. Sauvegarde MongoDB
         Message savedMsg = chatMessageService.save(chatMessage);
 
-        // 2. Notifier le destinataire via RabbitMQ -> WebSocket
-        // Le message sera envoyé sur : /user/{recipientId}/queue/messages
+        // 3. Notification Temps Réel
         messagingTemplate.convertAndSendToUser(
                 chatMessage.getRecipientId(),
                 "/queue/messages",
                 new ChatNotification(
                         savedMsg.getId(),
                         savedMsg.getSenderId(),
-                        savedMsg.getSenderId()
+                        savedMsg.getSenderId() // Attention: vérifier si le 3ème paramètre est le nom ou l'ID
                 )
         );
     }
