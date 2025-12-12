@@ -1,22 +1,21 @@
 package com.spotlight.offerandprestation.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.spotlight.offerandprestation.dto.DtoMapper;
 import com.spotlight.offerandprestation.dto.MediaDTO;
 import com.spotlight.offerandprestation.dto.ServiceOffreDTO;
 import com.spotlight.offerandprestation.models.Media;
 import com.spotlight.offerandprestation.models.ServiceOffre;
 import com.spotlight.offerandprestation.services.OffreService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/services")
-// @CrossOrigin("*") // Décommente si tu as des erreurs CORS avec React
+@RequestMapping("/api/v1/services") // Renommé 'services' pour cohérence avec 'orders'
 public class OffreController {
 
     @Autowired
@@ -25,35 +24,37 @@ public class OffreController {
     @Autowired
     private DtoMapper mapper;
 
-    // Création d'un service (Le prestataire envoie le JSON)
+    // POST /api/v1/services
     @PostMapping
-    public ServiceOffreDTO createService(@RequestBody ServiceOffre s) {
+    public ResponseEntity<ServiceOffreDTO> createService(@RequestBody ServiceOffre s) {
         ServiceOffre created = service.creerService(s);
-        return mapper.toServiceDTO(created);
+        return ResponseEntity.ok(mapper.toServiceDTO(created));
     }
 
-    // Récupérer tous les services (Pour la page d'accueil)
+    // GET /api/v1/services
     @GetMapping
-    public List<ServiceOffreDTO> getAll() {
-        return service.getAllServices().stream()
+    public ResponseEntity<List<ServiceOffreDTO>> getAll() {
+        List<ServiceOffreDTO> list = service.getAllServices().stream()
                 .map(mapper::toServiceDTO)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
     }
 
-    // Récupérer les services d'un prestataire spécifique (Pour son profil)
+    // GET /api/v1/services/prestataire/{id}
     @GetMapping("/prestataire/{id}")
-    public List<ServiceOffreDTO> getByPrestataire(@PathVariable Long id) {
-        return service.getServicesByPrestataire(id).stream()
+    public ResponseEntity<List<ServiceOffreDTO>> getByPrestataire(@PathVariable Long id) {
+        List<ServiceOffreDTO> list = service.getServicesByPrestataire(id).stream()
                 .map(mapper::toServiceDTO)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
     }
     
-    // Upload d'une image/vidéo pour un service
+    // POST /api/v1/services/{id}/medias
     @PostMapping("/{id}/medias")
-    public MediaDTO uploadMedia(@PathVariable Long id, 
-                                @RequestParam("file") MultipartFile file,
-                                @RequestParam("type") String type) {
+    public ResponseEntity<MediaDTO> uploadMedia(@PathVariable Long id, 
+                                                @RequestParam("file") MultipartFile file,
+                                                @RequestParam("type") String type) {
         Media media = service.ajouterMedia(id, file, type);
-        return mapper.toMediaDTO(media);
+        return ResponseEntity.ok(mapper.toMediaDTO(media));
     }
 }

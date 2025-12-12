@@ -15,5 +15,8 @@ public enum TypeAction {
 
     // Actions sur le contenu
     SUPPRESSION_COMMENTAIRE,
-    SUPPRESSION_TCHAT_MESSAGE
+    SUPPRESSION_TCHAT_MESSAGE,
+
+    // NOUVEAU : Pour les litiges financiers
+    RESOLUTION_LITIGE
 }

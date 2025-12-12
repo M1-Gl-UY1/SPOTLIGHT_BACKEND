@@ -17,4 +17,7 @@ public class ServiceOffreDTO {
     // On inclut les listes ici
     private List<PackDTO> packs;
     private List<MediaDTO> medias;
+    // Nouveaux champs pour la notation
+    private Double noteMoyenne; // ex: 4.5
+    private Long nombreAvis;    // ex: 12 avi
 }
