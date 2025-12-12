@@ -3,7 +3,7 @@ name: Build and Push All Services to Docker Hub
 # DÉCLENCHEUR : Uniquement quand on push sur la branche 'imelda'
 on:
   push:
-    branches: [ "imelda" ]
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
