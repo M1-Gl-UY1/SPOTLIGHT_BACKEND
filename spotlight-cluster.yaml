@@ -1,0 +1,32 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: spotlight-cluster
+  region: us-east-1
+  version: latest
+
+# On utilise des Managed Node Groups
+managedNodeGroups:
+  - name: spotlight-workers
+    instanceType: t3.medium
+    minSize: 2
+    maxSize: 4
+    desiredCapacity: 2
+    volumeSize: 30
+    ssh:
+      allow: true   # Utile pour débugger
+      publicKeyPath: ~/.ssh/id_rsa.pub
+
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        ebs: true
+        albIngress: true
+
+# Addons essentiels
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: aws-ebs-csi-driver

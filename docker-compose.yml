@@ -69,10 +69,12 @@ services:
     container_name: catalogue_prestation_db
     #restart always
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: catalogue_prestation_db
-      MYSQL_USER: catalogue_user
-      MYSQL_PASSWORD: catalogue_password
+      DB_NAME: catalogue_prestation_db
+      DB_USER: catalogue_user
+      DB_PASSWORD: catalogue_password
+      DB_HOST: catalogue-prestation-db
+      DB_PORT: 3306
+
     ports:
       - "3310:3306"
     volumes:
@@ -84,7 +86,7 @@ services:
     image: postgres:15-alpine
     container_name: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -196,10 +198,7 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888/
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://registry-service:8761/eureka/
       SPRING_APPLICATION_NAME: chat-service
-      # Ancienne variable (à supprimer ou ignorer) : MONGO_HOST: mongodb
-
-      # Nouvelle variable recommandée pour Spring Data MongoDB:
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/chatdb  # Remplacez 'chatdb' par le nom de votre base de données si nécessaire.
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/chatdb
 
       RABBIT_HOST: rabbitmq
     depends_on:
@@ -244,7 +243,7 @@ services:
     networks:
       - spotlight-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"] # Adapte le path si besoin (ex: /health)
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
       timeout: 5s
       retries: 3

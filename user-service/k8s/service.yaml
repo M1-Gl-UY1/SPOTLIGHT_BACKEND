@@ -7,6 +7,6 @@ spec:
   selector:
     app: user-service
   ports:
-      port: 5000        # Port exposé dans le cluster
-      targetPort: 5000  # Port dans le container
+      - port: 5000        # Port exposé dans le cluster
+        targetPort: 5000  # Port dans le container
   type: ClusterIP

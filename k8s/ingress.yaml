@@ -5,7 +5,7 @@ metadata:
   namespace: microservices
   annotations:
     # AWS ALB Ingress Controller
-    kubernetes.io/ingress.class: alb
+    ingressClassName: nginx
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     

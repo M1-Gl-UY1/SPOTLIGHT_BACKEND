@@ -136,11 +136,11 @@ import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'spotlight_db'),
-        'USER': os.environ.get('DB_USER', 'spotlight_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'spotlight_password'),
-        'HOST': os.environ.get('DB_HOST', 'db'), # 'db' correspond au nom du service dans docker-compose
-        'PORT': os.environ.get('DB_PORT', '3306'),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
 
