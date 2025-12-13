@@ -1,10 +1,8 @@
 const { DataTypes } = require("sequelize");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 
 const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-const PASSWORD_REGEX = /^[A-Za-z]\w{7,14}$/;
-const NAME_REGEX = /^[a-zA-Z0-9]+$/;
+const NAME_REGEX = /^[a-zA-Z0-9\s]+$/; // Ajout \s pour les noms composés
 const PHONE_REGEX = /^\d{9,13}$/;
 
 module.exports = (sequelize) => {
@@ -16,78 +14,58 @@ module.exports = (sequelize) => {
         allowNull: false,
         validate: {
           notEmpty: { msg: "firstName is required" },
-          is: {
-            args: NAME_REGEX,
-            msg: "Invalid firstName format",
-          },
+          is: { args: NAME_REGEX, msg: "Invalid firstName format" },
         },
       },
-
       lastName: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: { msg: "lastName is required" },
-          is: {
-            args: NAME_REGEX,
-            msg: "Invalid lastName format",
-          },
+          is: { args: NAME_REGEX, msg: "Invalid lastName format" },
         },
       },
-
       email: {
         type: DataTypes.STRING,
         unique: true,
         allowNull: false,
         validate: {
           isEmail: true,
-          is: {
-            args: EMAIL_REGEX,
-            msg: "Invalid email format",
-          },
+          is: { args: EMAIL_REGEX, msg: "Invalid email format" },
         },
       },
-
       phone: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
         validate: {
-          is: {
-            args: PHONE_REGEX,
-            msg: "Phone must contain 9–13 digits",
-          },
+          is: { args: PHONE_REGEX, msg: "Phone must contain 9–13 digits" },
         },
       },
-
       country: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
       password: {
         type: DataTypes.STRING,
         allowNull: false,
-        /*validate: {
-          is: {
-            args: PASSWORD_REGEX,
-            msg: "Password must be 8–15 chars starting with a letter",
-          },
-        },*/
       },
-
       avatar: {
         type: DataTypes.STRING,
         defaultValue: "",
       },
-
       role: {
         type: DataTypes.STRING,
-        defaultValue: "user"
+        defaultValue: "user", // 'user', 'provider', 'admin'
       },
-
+      // --- AJOUT POUR LA MODÉRATION ---
+      status: {
+        type: DataTypes.ENUM('ACTIF', 'SUSPENDU', 'BANNI'),
+        defaultValue: 'ACTIF',
+        allowNull: false
+      },
       refreshToken: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
+        type: DataTypes.JSON, // Préférez JSON pour les tableaux en MySQL/PG modernes, sinon STRING pour compatibilité
         defaultValue: [],
       },
     },
@@ -95,7 +73,6 @@ module.exports = (sequelize) => {
       tableName: "users",
       freezeTableName: true,
       timestamps: true,
-
       hooks: {
         async beforeSave(user) {
           if (user.changed("password")) {
@@ -112,28 +89,16 @@ module.exports = (sequelize) => {
     return bcrypt.compare(enteredPassword, this.password);
   };
 
-  User.prototype.generateEmailToken = function () {
-    return jwt.sign(
-      { email: this.email },
-      process.env.EMAIL_TOKEN_SECRET,
-      { expiresIn: "1d" }
-    );
-  };
-
-  User.prototype.generateEmailCode = function () {
-    const min = 100000;
-    const max = 999999;
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
-
   User.associate = (models) => {
-    User.hasMany(models.ReportUser, { foreignKey: 'reporterId', as: 'reportsMade' });
-    User.hasMany(models.ReportUser, { foreignKey: 'reportedUserId', as: 'reportsReceived' });
-    User.hasMany(models.Provider, { foreignKey: 'userId', as: 'providers' });
+    // Assure-toi que les modèles ReportUser et Provider existent dans ton dossier models
+    if(models.ReportUser) {
+        User.hasMany(models.ReportUser, { foreignKey: 'reporterId', as: 'reportsMade' });
+        User.hasMany(models.ReportUser, { foreignKey: 'reportedUserId', as: 'reportsReceived' });
+    }
+    if(models.Provider) {
+        User.hasOne(models.Provider, { foreignKey: 'userId', as: 'providerProfile' });
+    }
   };
-
 
   return User;
-
-
 };

@@ -1,60 +1,47 @@
-const multer = require("multer");
-const path = require('path');
 const router = require("express").Router();
-const { protect, protectAdmin } = require("../middlewares/authMiddleware");
+const { protect } = require("../middlewares/authMiddleware"); // Assure-toi que ce middleware existe
 const {
-  getEmailCode, verifyEmailCode, register, auth, logout,
-  getUser, getUsersProfile, updateUserProfile, deleteUser,
-  postAvatar, getAvatar, deleteAvatar, adminCreateUser,
-  AdminUpdateUser, EditRole, searchProfile
+    register,
+    auth,
+    getUserProfile,
+    updateUserProfile,
+    upgradeToProvider,
+    updateUserStatus,
+    createReport,
+    getReport
 } = require("../controllers/usercontroller");
 
-// Multer configuration
-const DIR = "./public/profilePicture";
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, DIR),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// ==========================================
+// 1. AUTHENTIFICATION
+// ==========================================
+router.post("/api/v1/auth/register", register);
+router.post("/api/v1/auth/login", auth);
 
-const fileFilter = (req, file, cb) => {
-  file.mimetype.split("/")[0] === "image" ? cb(null, true) : cb(new Error('Invalid file type'), false);
-};
+// ==========================================
+// 2. GESTION DES UTILISATEURS & PROFILS
+// ==========================================
 
-const upload = multer({ storage, fileFilter });
+// Récupérer le profil (Public ou propre profil)
+router.get("/api/v1/users/:id/profile", getUserProfile);
 
-// Authentication routes
-router.post("/jwt/auth", auth);
-router.post("/jwt/logout", logout);
-router.post("/jwt/register", register);
-router.post("/jwt/verifyEmailCode", getEmailCode);
-router.post("/jwt/verifyEmailCode/:token", verifyEmailCode);
+// Mise à jour du profil (Nécessite d'être connecté)
+router.put("/api/v1/users/:id/profile", protect, updateUserProfile);
 
-// Admin only routes
-router.post("/jwt/admin/create", protectAdmin, adminCreateUser);
-router.route("/jwt/role/:id").put(protectAdmin, EditRole);
-router.route("/jwt/delete/:userId").delete(protectAdmin, deleteUser);
+// Upgrade Utilisateur -> Prestataire
+router.post("/api/v1/users/providers", protect, upgradeToProvider);
 
-// Profile routes
-router.route("/jwt/profile")
-  .get(protectAdmin, getUsersProfile)
-  .put(protect, updateUserProfile);
+// Sanction : Changer le statut (Réservé au service MODERATION ou Admin)
+// Idéalement, créer un middleware 'protectAdmin' ou 'protectService'
+router.put("/api/v1/users/:id/status", updateUserStatus);
 
-router.route("/jwt/profile/:userId")
-  .get(protectAdmin, getUser)
-  .put(protectAdmin, upload.single("avatar"), AdminUpdateUser);
+// ==========================================
+// 3. SIGNALEMENTS
+// ==========================================
 
-router.get("/jwt/profile/search/:searchId", protectAdmin, searchProfile);
+// Créer un signalement (Client/Prestataire connecté)
+router.post("/api/v1/reports", protect, createReport);
 
-// Avatar routes
-router.route("/upload/avatar/:userId")
-  .put(upload.single("avatar"), postAvatar)
-  .get(getAvatar)
-  .delete(deleteAvatar);
-
-// Protection test routes (if needed for development)
-router.get("/jwt/protectAdmin", protectAdmin);
+// Lire un signalement (Service MODERATION)
+router.get("/api/v1/reports/:id", getReport);
 
 module.exports = router;
